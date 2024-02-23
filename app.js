@@ -32,7 +32,13 @@ const passport = require('passport');
 const  passport_strategy  = require('./passport');
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  res.send('heello it me');
+  res.send({
+    name: "tio vibe backend",
+    Api:"live api",
+    test:"success",
+    
+
+  });
   next(createError(404));
 });
 const oneDay = 1000 * 60 * 60 * 24;
