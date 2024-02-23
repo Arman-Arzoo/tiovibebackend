@@ -3,7 +3,7 @@ var multer_helper = require('../helpers/multer');
 const send_email = require('../helpers/sendEmail');
 var jwt = require("jsonwebtoken")
 const bcrypt = require('bcryptjs')
-const db = require('./db');
+const db = require('./db.js');
 const path = require('path');
 const moment = require('moment');
 require('dotenv').config();
