@@ -32,13 +32,6 @@ const passport = require('passport');
 const  passport_strategy  = require('./passport');
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  res.send({
-    name: "tio vibe backend",
-    Api:"live api",
-    test:"success",
-    
-
-  });
   next(createError(404));
 });
 const oneDay = 1000 * 60 * 60 * 24;
@@ -56,7 +49,7 @@ passport_strategy(passport);
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'production' ? err : {};
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
