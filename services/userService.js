@@ -48,7 +48,7 @@ async function signupService(req,res){
         var output;
         const check_user_existence = `select * from users where username = ? or email = ?`
         const check_users_value = [username,email]
-        const is_user_exists = await db.executeQuery(check_user_existence,check_users_value)
+        const is_user_exists = awaitdb?.executeQuery(check_user_existence,check_users_value)
         if(!is_user_exists.errno){
             if(is_user_exists.length > 0){
                 response.success = false
@@ -71,7 +71,7 @@ async function signupService(req,res){
         const verification_token = jwt.sign({email: email}, process.env.JWT_TOKEN_KEY)
         const values = [username,email,is_active,is_deleted,is_admin,is_verified,password,last_login,created_at,verification_token,phone_number,is_visitor,1,customer.id]
         console.log(values)
-        const create_user = await db.executeQuery(query,values)
+        const create_user = awaitdb?.executeQuery(query,values)
         if (create_user.errno){
             response.success = false
             response.message = create_user.sqlMessage
@@ -90,11 +90,11 @@ async function signupService(req,res){
 async function confirmMail(req,res){
     const query = 'select * from users where is_active=1 and is_deleted=0 and is_verified=0 and verification_token=?'
     const values = [req.params.verificationcode]
-    const found_user = await db.executeQuery(query,values)
+    const found_user = awaitdb?.executeQuery(query,values)
     if (found_user.length > 0){
         const query = 'update users  set is_verified=? where id=?'
         const values = [1,found_user[0].id]
-        const user_verified = await db.executeQuery(query,values)
+        const user_verified = awaitdb?.executeQuery(query,values)
         console.log(user_verified)
         
         return {
@@ -129,7 +129,7 @@ async function initiateResetPassword(req,res){
     }
     const query = 'select * from users where email = ? or username = ?'
     const values = [req.body.username,req.body.username]
-    const found_user = await db.executeQuery(query,values)
+    const found_user = awaitdb?.executeQuery(query,values)
     if (found_user.length == 0) {
         response.message.push({
             invalid_email:"User does not exist."
@@ -161,7 +161,7 @@ async function initiateResetPassword(req,res){
             })
             const update_user_query = 'update users set reset_password_token = ? where username = ? or email = ?'
             const update_user_values = [verification_token,req.body.username,req.body.username]
-            const update_user = await db.executeQuery(update_user_query,update_user_values)
+            const update_user = awaitdb?.executeQuery(update_user_query,update_user_values)
             console.log(update_user,'update_user')
             const subject = "Password Reset"
             const email_msg = `Your request for password reset has been completed. <a href="http://${process.env.BASE_URL_EMAIL_CLIENT_SIDE}/reset-password/${verification_token}">Click here to reset password</a>`
@@ -216,7 +216,7 @@ async function resetPassword(req,res){
     const query = 'select * from users where reset_password_token = ?'
     console.log(query)
     const values = [req.params.verificationcode]
-    const found_user = await db.executeQuery(query,values)
+    const found_user = awaitdb?.executeQuery(query,values)
     if (found_user.length == 0) {
         response.message.push({
             invalid_token:"User does not exist."
@@ -285,7 +285,7 @@ async function confirmResetPassword(req){
     const salt = await bcrypt.genSalt(10)
     const password = await bcrypt.hash(req.body?.password, salt)
     const values = [req.body.token,req.body.username,req.body.username]
-    const user = await db.executeQuery(query,values)
+    const user = awaitdb?.executeQuery(query,values)
     console.log(user)
     console.log(query)
     console.log(values)
@@ -310,7 +310,7 @@ async function confirmResetPassword(req){
     }
     const update_query = 'update users set password = ? where reset_password_token = ?'
     const update_values = [password,req.body.token]
-    const update_user = await db.executeQuery(update_query,update_values)
+    const update_user = awaitdb?.executeQuery(update_query,update_values)
     console.log(update_user)
     if (update_user.affectedRows > 0){
         return {
@@ -337,7 +337,7 @@ async function setUpProfile(req){
        });
     const select_values = [decodedToken.payload.user_id]
     console.log(languages)
-    const user_details = await db.executeQuery(query,select_values)
+    const user_details = awaitdb?.executeQuery(query,select_values)
     const validationRule = {
         "languages": "required|array",
         "services": "required|array",
@@ -356,20 +356,20 @@ async function setUpProfile(req){
     if (user_details.length > 0){
         const update_user_query = 'update users set profile_pic = ?, first_name = ? , last_name = ? , identification_doc = ?, country = ? where id = ?'
         const update_user_values = [pic_name,first_name,last_name,identity_doc,country,decodedToken.payload.user_id]
-        const update_user_status = await db.executeQuery(update_user_query,update_user_values)
+        const update_user_status = awaitdb?.executeQuery(update_user_query,update_user_values)
         console.log(req.file,'update user')
         console.log(update_user_status.affectedRows,'update user')
         if (update_user_status.affectedRows > 0){
         }
         const select_profile_query = `select * from users where id = ?`
         const select_profile_values = [decodedToken.payload.user_id]
-        const profile_status = await db.executeQuery(select_profile_query,select_profile_values)
+        const profile_status = awaitdb?.executeQuery(select_profile_query,select_profile_values)
         console.log(profile_status,'profile_status')
         if (profile_status.length > 0){
             const delete_lang_query = `delete from user_languages where user_id = ?`
             const delete_services_query = `delete from user_services where user_id = ?`
-            const deleted_lang = await db.executeQuery(delete_lang_query,[decodedToken.payload.user_id])
-            const deleted_services = await db.executeQuery(delete_services_query,[decodedToken.payload.user_id])
+            const deleted_lang = awaitdb?.executeQuery(delete_lang_query,[decodedToken.payload.user_id])
+            const deleted_services = awaitdb?.executeQuery(delete_services_query,[decodedToken.payload.user_id])
         }
             const update_lang_query = `insert into user_languages (user_id,language_id) values ?`
             const update_services_query = `insert into user_services (user_id,service_id) values ?`
@@ -391,8 +391,8 @@ async function setUpProfile(req){
             // const update_lang_values = languages_array
             // const update_services_values = services_array
             
-            const inserted_services = await db.executeQuery(update_lang_query,[languages_array])
-            const inserted_lang = await db.executeQuery(update_services_query,[services_array])
+            const inserted_services = awaitdb?.executeQuery(update_lang_query,[languages_array])
+            const inserted_lang = awaitdb?.executeQuery(update_services_query,[services_array])
             console.log(inserted_lang,'inserted_lang')
             console.log(inserted_services,'inserted_lang')
             response.message.push('User hase been updated successfully.')
@@ -425,7 +425,7 @@ async function signIn(req){
         if (is_verified.success != false){
             console.log(is_verified.data.email)
             const check_user = `select users.*,package_id,packages_name,comission,services.id as service_id,service_name,languages.id as lang_id, languages.name as lang_name from users left join user_packages on users.id = user_packages.user_id left join hosts_packages on user_packages.package_id = hosts_packages.id left join user_languages on users.id=user_languages.user_id left join user_services on users.id=user_services.user_id left join languages on user_languages.language_id=languages.id left join services on user_services.service_id=services.id where email='${is_verified.data.email}' or username='${is_verified.data.email}'`
-            const is_user_exists = await db.executeQuery(check_user)
+            const is_user_exists = awaitdb?.executeQuery(check_user)
             if (is_user_exists.length > 0){
                 if (is_user_exists[0].password == '' || is_user_exists[0].password == null || is_user_exists[0].password == undefined){
                 const token = jwt.sign(
@@ -483,10 +483,10 @@ async function signIn(req){
                   });
                 const create_user = `insert into users (email,username,is_verified,is_active,profile_pic,first_name,last_name,password,is_deleted,verification_token,is_admin,created_at,profile_status,customer_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
                 const create_user_values = [is_verified.data.email,is_verified.data.email,1,1,is_verified.data.picture,is_verified.data.given_name,is_verified.data.family_name,'',0,'',0,new Date(),0,customer.id]
-                const user_created = await db.executeQuery(create_user,create_user_values)
+                const user_created = awaitdb?.executeQuery(create_user,create_user_values)
                 if (!user_created.errno){
                     const check_user = `select users.*,package_id,packages_name,comission,services.id as service_id,service_name,languages.id as lang_id, languages.name as lang_name from users left join user_packages on users.id = user_packages.user_id left join hosts_packages on user_packages.package_id = hosts_packages.id left join user_languages on users.id=user_languages.user_id left join user_services on users.id=user_services.user_id left join languages on user_languages.language_id=languages.id left join services on user_services.service_id=services.id where email='${is_verified.data.email}' or username='${is_verified.data.email}'`
-            const is_user_exists = await db.executeQuery(check_user)
+            const is_user_exists = awaitdb?.executeQuery(check_user)
             if (is_user_exists.length > 0){
                 if (is_user_exists[0].password == '' || is_user_exists[0].password == null || is_user_exists[0].password == undefined){
                 const token = jwt.sign(
@@ -558,7 +558,7 @@ async function signIn(req){
     })
     const query = 'select users.*,package_id,packages_name,comission,services.id as service_id,service_name,languages.id as lang_id, languages.name as lang_name from users left join user_packages on users.id = user_packages.user_id left join hosts_packages on user_packages.package_id = hosts_packages.id left join user_languages on users.id=user_languages.user_id left join user_services on users.id=user_services.user_id left join languages on user_languages.language_id=languages.id left join services on user_services.service_id=services.id where email = ? or username = ?'
     const values = [username,username]
-    const user = await db.executeQuery(query,values)
+    const user = awaitdb?.executeQuery(query,values)
     console.log(user,'user')
         if (user.length ==0) {
         response.message.push({
@@ -594,7 +594,7 @@ async function signIn(req){
     // Create token
     const update_user = 'update users set last_login=? where id=?'
     const update_values = [new Date(),user[0].id]
-    const update_results = await db.executeQuery(update_user,update_values)
+    const update_results = awaitdb?.executeQuery(update_user,update_values)
     console.log(user[0].id,'user exists')
     const token = jwt.sign(
     { user_id: user[0].id, user_name:username,is_admin:user[0].is_admin,is_visitor:user[0].is_visitor },
@@ -687,9 +687,9 @@ async function userDetail(req){
     const values = [user_id]
     const user_languages = `select * from languages left join user_languages on languages.id=user_languages.language_id  where user_id=${user_id}`
     const user_services = `select * from services left join user_services on services.id=user_services.service_id where user_id=${user_id}`
-    const is_user_languages = await db.executeQuery(user_languages)
-    const is_user_services = await db.executeQuery(user_services)
-    const user = await db.executeQuery(query,values)
+    const is_user_languages = awaitdb?.executeQuery(user_languages)
+    const is_user_services = awaitdb?.executeQuery(user_services)
+    const user = awaitdb?.executeQuery(query,values)
     var user_detail = {}
     user_detail.email = user[0].email
     user_detail.username = user[0].username
@@ -734,7 +734,7 @@ async function userStatus(req){
     }
     const user_id = decodedToken.payload.user_id
     const query = `update users set profile_status = 1, is_visitor = ${req.body.is_visitor} where id=${user_id} `
-    const user_status = await db.executeQuery(query)
+    const user_status = awaitdb?.executeQuery(query)
     console.log(user_status)
     return {
         success:true,
@@ -757,7 +757,7 @@ async function checkUserExists(req, res, next) {
         return res.status(500).json({ error: 'Please login.' });
     }
     const query = 'SELECT * FROM users WHERE id = ?';
-    const user = await db.executeQuery(query,userId);
+    const user = awaitdb?.executeQuery(query,userId);
       if (user.err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error' });
@@ -780,7 +780,7 @@ async function isAdmin(req, res, next) {
         return res.status(401).json({ error: 'Please login.', success:false});
     }
     const query = 'SELECT * FROM users WHERE id = ?';
-    const user = await db.executeQuery(query,userId);
+    const user = awaitdb?.executeQuery(query,userId);
       if (user.err) {
         console.error(err);
         return res.status(500).json({ error: 'Database error',success:false });

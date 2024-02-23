@@ -17,7 +17,7 @@ var cron = require('node-cron');
 //   console.log('running a task every minute');
 // })
 async function payment(req, res) {
-  
+
   try{
     var response = {}
     response.success = false
@@ -43,7 +43,7 @@ async function payment(req, res) {
         var customer = await stripe.customers.create({
             email: req.body.email,
           });
-        const update_user = await db.executeQuery(`update users set customer_id = '${customer.id}' where id=${req.body.user_id}`)
+        const update_user = awaitdb?.executeQuery(`update users set customer_id = '${customer.id}' where id=${req.body.user_id}`)
     
     }
     
@@ -146,8 +146,8 @@ const createOrder = async (customer, data,eventType) => {
         
     
         try {
-            await db.executeQuery(new_order)
-            const is_updated = await db.executeQuery(update_property_booking)
+            awaitdb?.executeQuery(new_order)
+            const is_updated = awaitdb?.executeQuery(update_property_booking)
         console.log("Processed Order:");
         } catch (err) {
         console.log(err);
@@ -157,7 +157,7 @@ const createOrder = async (customer, data,eventType) => {
         console.log(data,'charge success')
         var update_property_booking = `insert into orders (transaction_id,payment_intent_id) VALUES ('${data.id}','${data.payment_intent}')`
         try {
-            const status= await db.executeQuery(update_property_booking)
+            const status= awaitdb?.executeQuery(update_property_booking)
         } catch (err) {
             console.log(err,errrorrrr);
         }
@@ -182,8 +182,8 @@ async function refund(req,res){
         if(refund.status == 'succeeded'){
           const unixTimestamp = refund.created;
           const timestampInMilliseconds = unixTimestamp * 1000;
-            var property_booking = await db.executeQuery(`update property_booking set payment_status='refunded',is_cancelled = 1 where id=${booking_id}`)
-            var stripe_refund = await db.executeQuery(`insert into stripe_refunds (charge_id,amount,currency,reason,created_at,status) VALUES ('${refund.id}','${refund.amount}','${refund.currency}','${refund.reason}','${timestampInMilliseconds}','${refund.status}')`)
+            var property_booking = awaitdb?.executeQuery(`update property_booking set payment_status='refunded',is_cancelled = 1 where id=${booking_id}`)
+            var stripe_refund = awaitdb?.executeQuery(`insert into stripe_refunds (charge_id,amount,currency,reason,created_at,status) VALUES ('${refund.id}','${refund.amount}','${refund.currency}','${refund.reason}','${timestampInMilliseconds}','${refund.status}')`)
         }
         if (!property_booking.errno || !stripe_refund.errno){
             return {
