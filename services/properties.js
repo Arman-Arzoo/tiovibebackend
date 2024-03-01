@@ -3,7 +3,7 @@ var multer_helper = require('../helpers/multer');
 const send_email = require('../helpers/sendEmail');
 var jwt = require("jsonwebtoken")
 const bcrypt = require('bcryptjs')
-const db = require('./db.js');
+const db = require('./db');
 const path = require('path');
 const moment = require('moment');
 require('dotenv').config();
@@ -67,12 +67,12 @@ async function listProperties(req){
     }
     var list_property_query = `select * from properties  ${append_filters} LIMIT ? OFFSET ?;`
     var list_property_params = [top,skip]
-    var results = awaitdb?.executeQuery(list_property_query,list_property_params)
+    var results = await db.executeQuery(list_property_query,list_property_params)
     console.log(list_property_query)
 
     response.success = true
     response.data = results
-    response.total_count = awaitdb?.executeQuery(`select count(id) as total from properties ${append_filters}`,'')
+    response.total_count = await db.executeQuery(`select count(id) as total from properties ${append_filters}`,'')
     return response
 }
 async function listUserProperties(req){
@@ -138,12 +138,12 @@ async function listUserProperties(req){
     }
     var list_property_query = `select * from properties  ${append_filters} LIMIT ? OFFSET ?;`
     var list_property_params = [top,skip]
-    var results = awaitdb?.executeQuery(list_property_query,list_property_params)
+    var results = await db.executeQuery(list_property_query,list_property_params)
     console.log(list_property_query)
 
     response.success = true
     response.data = results
-    response.total_count = awaitdb?.executeQuery(`select count(id) as total from properties ${append_filters}`,'')
+    response.total_count = await db.executeQuery(`select count(id) as total from properties ${append_filters}`,'')
     return response
 }
 
@@ -205,12 +205,12 @@ async function listBookedProperties(req){
     }
     var list_property_query = `select * from properties left join property_booking on properties.id=property_booking.property_id  ${append_filters} and property_booking.booked_by_user_id = ${user_id}  LIMIT ? OFFSET ?;`
     var list_property_params = [top,skip]
-    var results = awaitdb?.executeQuery(list_property_query,list_property_params)
+    var results = await db.executeQuery(list_property_query,list_property_params)
     console.log(list_property_query)
 
     response.success = true
     response.data = results
-    response.total_count = awaitdb?.executeQuery(`select count(property_booking.id) as total from properties left join property_booking on properties.id=property_booking.property_id ${append_filters}  and property_booking.booked_by_user_id = ${user_id}`,'')
+    response.total_count = await db.executeQuery(`select count(property_booking.id) as total from properties left join property_booking on properties.id=property_booking.property_id ${append_filters}  and property_booking.booked_by_user_id = ${user_id}`,'')
     return response
 }
 async function viewProperty(req){
@@ -221,15 +221,15 @@ async function viewProperty(req){
     var view_property_query = `select users.id as user_id, properties.* from properties join users on properties.created_by_user = users.id where properties.id = ?`
     var property_booked_range = `select property_booking.booked_from_date as booked_from_date,property_booking.booked_to_date as booked_to_date from property_booking left join properties on properties.id=property_booking.property_id where properties.id = ?`
     var view_property_params = [property_id]
-    var results = awaitdb?.executeQuery(view_property_query,view_property_params)
-    var property_booked_range_dates = awaitdb?.executeQuery(property_booked_range,view_property_params)
+    var results = await db.executeQuery(view_property_query,view_property_params)
+    var property_booked_range_dates = await db.executeQuery(property_booked_range,view_property_params)
     console.log(property_id)
     var user_property_count = `select count(id) as total_properties from user_properties where user_id = ?`
     var user_languages = `select * from languages where id in (select language_id from user_languages where user_id=?)`
     var user_detail = `select CONCAT(first_name,last_name) as name,profile_pic,created_at,email,phone_number from users where id=?`
-    var is_property_count = awaitdb?.executeQuery(user_property_count,results[0].user_id)
-    var is_user_lang = awaitdb?.executeQuery(user_languages,results[0].user_id)
-    var is_user_detail = awaitdb?.executeQuery(user_detail,results[0].user_id)
+    var is_property_count = await db.executeQuery(user_property_count,results[0].user_id)
+    var is_user_lang = await db.executeQuery(user_languages,results[0].user_id)
+    var is_user_detail = await db.executeQuery(user_detail,results[0].user_id)
 
     console.log(results)
     response.success = true
@@ -304,7 +304,7 @@ async function addProperty(req){
     console.log(img_array,'img_array')
     const insert_property_query = `insert into properties (name,location,longitude,latitude,bedrooms,washrooms,wifi,check_in,check_out,created_by_user,night_rate,pool,category,property_img,booking_note,booking_offset,booking_window,minimum_booking_duration,maximum_booking_duration,booking_import_url,manual,currency,country,continent,laundary,created_at,modified_at,post_status,type,is_active,city,address,contact,street,zipcode,pets,tags,additional,description,is_pending,is_approved,property_doc,phone_number,availibility_from,availibility_to,cleaning_charges) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     const insert_property_values = [name,location,longitude,latitude,bedrooms,washrooms,wifi,check_in,check_out,created_by_user,night_rate,pool,category,img_array,booking_note,booking_offset,booking_window,minimum_window_duration,maximum_booking_duration,booking_import_url,manual,currency,country,countinent_full,0,new Date(),new Date(),0,'',1,'','','','','',pets,tags,additional,desc,1,0,property_doc,phone_number,availibility_from,availibility_to,cleaning_charges]
-    const property_added = awaitdb?.executeQuery(insert_property_query,insert_property_values)
+    const property_added = await db.executeQuery(insert_property_query,insert_property_values)
     if(property_added.errno){
         response.success = false
         console.log(property_added.sqlMessage)
@@ -323,7 +323,7 @@ async function addFavoriteProperty(req){
        });
     const favorite_property_query = `insert into user_properties (property_id,user_id) values (?,?)`
     const favorite_property_values = [req.body.property_id,decodedToken.payload.user_id]
-    const favrite_added = awaitdb?.executeQuery(favorite_property_query,favorite_property_values)
+    const favrite_added = await db.executeQuery(favorite_property_query,favorite_property_values)
     if (favrite_added.errno){
         response.message = favrite_added.sqlMessage
         response.success = false
@@ -341,7 +341,7 @@ async function removeFavoriteProperty(req){
        });
     const favorite_property_query = `delete user_properties where id = ?`
     const favorite_property_values = [req.body.id]
-    const favrite_added = awaitdb?.executeQuery(favorite_property_query,favorite_property_values)
+    const favrite_added = await db.executeQuery(favorite_property_query,favorite_property_values)
     if (favrite_added.errno){
         response.message = create_user.sqlMessage
         response.success = false
@@ -357,7 +357,7 @@ async function listFavoriteProperty(req){
        });
     const list_favorite_properties = `select * from properties join user_properties on properties.id = user_properties.property_id where user_id = ?`
     const list_properties_vlaues = [decodedToken.payload.user_id]
-    const result_user_properties = awaitdb?.executeQuery(list_favorite_properties,list_properties_vlaues)
+    const result_user_properties = await db.executeQuery(list_favorite_properties,list_properties_vlaues)
     response.success = true
     response.results = result_user_properties
     return response
@@ -370,7 +370,7 @@ async function addPropertyReview(req){
     });
     const add_review_query = `insert into property_reviews (property_id,user_id,comment,is_active,rating) values (?,?,?,?,?)`
     const add_review_values = [req.body.property_id,decodedToken.payload.user_id,req.body.comment,1,req.body.rating]
-    const review_added = awaitdb?.executeQuery(add_review_query,add_review_values)
+    const review_added = await db.executeQuery(add_review_query,add_review_values)
     response.success = true
     response.message = 'Review added successfully.'
     return response
@@ -380,7 +380,7 @@ async function listPropertyReview(req){
     response.success = false
     const list_review_query = `select property_reviews.user_id as user_id, property_reviews.property_id as property_id,users.first_name,users.last_name, property_reviews.id as review_id,property_reviews.comment,property_reviews.rating as rating,users.profile_pic as profile_pic from property_reviews join users on property_reviews.user_id = users.id where property_id = ?`
     const list_review_values = [req.body.property_id]
-    const property_review = awaitdb?.executeQuery(list_review_query,list_review_values)
+    const property_review = await db.executeQuery(list_review_query,list_review_values)
     response.success = true
     response.results = property_review
     return response
@@ -388,8 +388,8 @@ async function listPropertyReview(req){
 async function listServicesLanguages(req){
     var response = {}
     response.success = false
-    response.services =  awaitdb?.executeQuery('select id,service_name from services','')
-    response.languages =  awaitdb?.executeQuery('select id,name from languages','')
+    response.services =  await db.executeQuery('select id,service_name from services','')
+    response.languages =  await db.executeQuery('select id,name from languages','')
     return response
 }
 var enumerateDaysBetweenDates = function(startDate, endDate) {
@@ -433,8 +433,8 @@ async function checkBooking(req){
     OR (booked_to_date >= ? AND booked_to_date <= ?);`
     const property_avail_detail_query = `select id,date_format(availibility_to,'%Y-%m-%d') as availibility_to,date_format(availibility_from,'%Y-%m-%d') as availibility_from,maximum_booking_duration as maximum_booking_duration,minimum_booking_duration as minimum_booking_duration  from properties where id=?`
     const property_avail_values = [property_id,booked_to_date,booked_from_date,booked_to_date,booked_from_date,booked_to_date,booked_from_date]
-    const results = awaitdb?.executeQuery(property_avail_query,property_avail_values)
-    const is_property_avail_detail_query = awaitdb?.executeQuery(property_avail_detail_query,property_id)
+    const results = await db.executeQuery(property_avail_query,property_avail_values)
+    const is_property_avail_detail_query = await db.executeQuery(property_avail_detail_query,property_id)
     console.log(moment(booked_to_date).diff(moment(booked_from_date).subtract(1,'days'),'days'))
     console.log(booked_from_date , is_property_avail_detail_query[0].availibility_from , booked_to_date , is_property_avail_detail_query[0].availibility_to)
     console.log(moment(booked_from_date).diff(moment(is_property_avail_detail_query[0].availibility_from), 'days'))
@@ -553,7 +553,7 @@ async function bookProperty(req,res){
     if(response.err){
         return response
     }
-    const get_property_comission = awaitdb?.executeQuery(`select comission from hosts_packages left join user_packages on `+
+    const get_property_comission = await db.executeQuery(`select comission from hosts_packages left join user_packages on `+
     `user_packages.package_id = hosts_packages.id where user_packages.id = (select created_by_user from properties where id=${property_id}) `)
     
     var host_total = req.body.cleaning_charges + (req.body.quantity * req.body.property_cost)
@@ -575,13 +575,13 @@ async function bookProperty(req,res){
     const book_property_values = [property_id,user_id,booked_from_date,booked_to_date,0,0,new Date(),
         is_booked_status,is_manual,req.body.quantity,booker_service_fee,req.body.cleaning_charges,
         req.body.property_cost,req.body.total_property_cost,comission,host_total_after,admin_total,host_service_fee,booker_total]
-    const is_booked = awaitdb?.executeQuery(book_property_quer,book_property_values)
+    const is_booked = await db.executeQuery(book_property_quer,book_property_values)
     const hosts_email= `select users.email from properties join users on properties.created_by_user = users.id where properties.id = ?`
     const hosts_email_val = [property_id] 
     const booker_email= `select email from users where id = ?`
     const booker_email_val = [user_id] 
-    var is_hosts_email = awaitdb?.executeQuery(hosts_email,hosts_email_val)
-    var is_booker_email = awaitdb?.executeQuery(booker_email,booker_email_val)
+    var is_hosts_email = await db.executeQuery(hosts_email,hosts_email_val)
+    var is_booker_email = await db.executeQuery(booker_email,booker_email_val)
     var subject = 'Booking'
     if(!is_booked.errno){
         if (is_hosts_email){
@@ -636,7 +636,7 @@ async function instantBooking(req){
     }
     const hosts_email= `select users.email from properties join users on properties.created_by_user = users.id where properties.id = ?`
     const hosts_email_val = [property_id] 
-    var is_hosts_email = awaitdb?.executeQuery(hosts_email,hosts_email_val)
+    var is_hosts_email = await db.executeQuery(hosts_email,hosts_email_val)
     var subject = 'Booking Request'
     if (is_hosts_email){
         response.success = true
@@ -666,12 +666,12 @@ async function instantBooking(req){
 
 async function topRated(req){
     const top_rated_query = `select property_id,properties.*,avg(rating)as rating,(select CONCAT(first_name,' ',last_name)  from users where id=properties.created_by_user) as user_name,(select profile_pic  from users where id=properties.created_by_user) as profile_pic from property_reviews left join properties on properties.id=property_reviews.property_id group by property_id order by rating desc LIMIT 3;`
-    const top_rated = awaitdb?.executeQuery(top_rated_query,'')
+    const top_rated = await db.executeQuery(top_rated_query,'')
     return top_rated
 }
 async function detailedListProperties(req){
     const top_rated_query = `select properties.*, (select * from property_booking where property_id=properties.id) as property_bookings  from properties`
-    const top_rated = awaitdb?.executeQuery(top_rated_query,'')
+    const top_rated = await db.executeQuery(top_rated_query,'')
     return top_rated
 }
 module.exports = {

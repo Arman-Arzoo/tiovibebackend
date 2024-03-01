@@ -31,13 +31,9 @@ app.use('/users', usersRouter);
 const passport = require('passport');
 const  passport_strategy  = require('./passport');
 // catch 404 and forward to error handler
-// app.use(function(req, res, next) {
-//   next(createError(404));
-// });
-
-app.get("/",function(req,res){
-  res.send("Api is running")
-})
+app.use(function(req, res, next) {
+  next(createError(404));
+});
 const oneDay = 1000 * 60 * 60 * 24;
 app.use(sessions({
   secret: "tiovibesecret",

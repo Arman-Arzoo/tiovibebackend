@@ -3,13 +3,13 @@ var multer_helper = require('../helpers/multer');
 const send_email = require('../helpers/sendEmail');
 var jwt = require("jsonwebtoken")
 const bcrypt = require('bcryptjs')
-const db = require('./db.js');
+const db = require('./db');
 const path = require('path');
 const { response } = require('../app');
 require('dotenv').config();
 
 async function listPackages(req){
-    return awaitdb?.executeQuery('select * from hosts_packages','')
+    return await db.executeQuery('select * from hosts_packages','')
 }
 async function viewPackage(req){
     var response = {}
@@ -27,7 +27,7 @@ async function viewPackage(req){
     if(response.err){
         return response
     }
-    const package_detail = awaitdb?.executeQuery(`select * from hosts_packages where id =${req.body.package_id}`)
+    const package_detail = await db.executeQuery(`select * from hosts_packages where id =${req.body.package_id}`)
     response.success = true
     response.data = package_detail
     return response
@@ -51,7 +51,7 @@ async function editPackages(req){
     if(response.err){
         return response
     }
-    const package_updated = awaitdb?.executeQuery(`update hosts_packages set package_name = ${req.body.package_name}, commission = ${req.body.commission}, price = ${req.body.price} where id=${req.body.package_id}`)
+    const package_updated = await db.executeQuery(`update hosts_packages set package_name = ${req.body.package_name}, commission = ${req.body.commission}, price = ${req.body.price} where id=${req.body.package_id}`)
     if (!package_updated.errno){
         response.success = true
         response.message = 'Package updated successfully.'
@@ -84,7 +84,7 @@ async function addPackage(req){
     const is_premium = req.body.is_premium
     const package_add_query = 'insert into hosts_package values (?,?,?,?)'
     const add_package_values = [package_name,package_price,package_commission,is_premium]
-    const package_added = awaitdb?.executeQuery(package_add_query,add_package_values)
+    const package_added = await db.executeQuery(package_add_query,add_package_values)
     response.success = true
     response.message = 'Package added successfully.'
     return response
@@ -173,11 +173,11 @@ async function assignPackage(req){
     const delete_package = `delete from user_packages where user_id = ?`
     const package_added_query = `insert into user_packages (package_id,user_id) values (?,?)`
     const package_added_values = [package_id,user_id]
-    const package_deleted = awaitdb?.executeQuery(delete_package,[user_id])
-    const package_added = awaitdb?.executeQuery(package_added_query,package_added_values)
+    const package_deleted = await db.executeQuery(delete_package,[user_id])
+    const package_added = await db.executeQuery(package_added_query,package_added_values)
     const query = 'select users.*,package_id,packages_name,comission,languages.*,services.id as service_id,service_name,languages.id as lang_id, languages.name as lang_name from users left join user_packages on users.id = user_packages.user_id left join hosts_packages on user_packages.package_id = hosts_packages.id left join user_languages on users.id=user_languages.user_id left join user_services on users.id=user_services.user_id left join languages on user_languages.language_id=languages.id left join services on user_services.service_id=services.id where users.id = ?'
     const values = [user_id]
-    const user = awaitdb?.executeQuery(query,values)
+    const user = await db.executeQuery(query,values)
     var user_detail = {}
     user_detail.email = user[0].email
     user_detail.username = user[0].username
